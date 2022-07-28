@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Lan">
+      <UniqueIdentifier>{78abdd77-e62d-462b-b8f0-ded895465b0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Lan\Server">
+      <UniqueIdentifier>{bf995fab-93ee-47cb-bc4a-723c27001b8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Lan\Client">
+      <UniqueIdentifier>{73842b8c-7d7e-44e9-a802-d3096214dbb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Component">
+      <UniqueIdentifier>{45f3d65c-45d0-4cf1-b712-279f28cd027e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EchoServer">
+      <UniqueIdentifier>{60c9b36f-7209-41ea-8b9f-c25681446d8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Component\MemoryPoolTLS">
+      <UniqueIdentifier>{b9493a94-5f9c-4ced-adea-0e87e8a64d34}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CLanServer.cpp">
+      <Filter>Lan\Server</Filter>
+    </ClCompile>
+    <ClCompile Include="CPacket.cpp">
+      <Filter>Component</Filter>
+    </ClCompile>
+    <ClCompile Include="CRingBuffer.cpp">
+      <Filter>Component</Filter>
+    </ClCompile>
+    <ClCompile Include="CEchoServer.cpp">
+      <Filter>EchoServer</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CCrashDump.cpp">
+      <Filter>Component</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CLanServer.h">
+      <Filter>Lan\Server</Filter>
+    </ClInclude>
+    <ClInclude Include="CPacket.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="CRingBuffer.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="CEchoServer.h">
+      <Filter>EchoServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CMemoryPool.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="CLFMemoryPool.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="CCrashDump.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="CLFQueue.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="CChunk.h">
+      <Filter>Component\MemoryPoolTLS</Filter>
+    </ClInclude>
+    <ClInclude Include="CChunkMemoryPool.h">
+      <Filter>Component\MemoryPoolTLS</Filter>
+    </ClInclude>
+    <ClInclude Include="CMemoryPoolTLS.h">
+      <Filter>Component\MemoryPoolTLS</Filter>
+    </ClInclude>
+    <ClInclude Include="CLFStack.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
