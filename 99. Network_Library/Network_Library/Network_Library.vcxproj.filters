@@ -31,6 +31,9 @@
     <Filter Include="Component\MemoryPoolTLS">
       <UniqueIdentifier>{b9493a94-5f9c-4ced-adea-0e87e8a64d34}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{a59fb2ae-9a9d-4773-aa64-86f6581501fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLanServer.cpp">
@@ -50,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="CCrashDump.cpp">
       <Filter>Component</Filter>
+    </ClCompile>
+    <ClCompile Include="CNetServer.cpp">
+      <Filter>Net</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +94,9 @@
     </ClInclude>
     <ClInclude Include="CLFStack.h">
       <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="CNetServer.h">
+      <Filter>Net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

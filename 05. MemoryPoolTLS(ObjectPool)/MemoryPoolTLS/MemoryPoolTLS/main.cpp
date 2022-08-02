@@ -5,30 +5,26 @@
 #include "Profiler.h"
 //#include "TLSProfiling.h"
 
+HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
 class CTest
 {
 public:
     CTest()
-        : a(0)
-        , b(0)
-        , c(0)
-        , d(0)
-    {}
+        : a()
+    {
+        //memset(a, 1, sizeof(int) * 350);
+    }
     ~CTest() {}
 private:
-    int     a;
-    int     b;
-    int     c;
-    int     d;
+    int     a[350];
 };
 
 CMemoryPoolTLS<CTest> g_Pool;
 
-void __stdcall NewDelete(LPVOID lpEvent)
+void __stdcall NewDelete()
 {
-    HANDLE hEvent = (HANDLE)lpEvent;
-
-    WaitForSingleObject(lpEvent, INFINITE);
+    WaitForSingleObject(hEvent, INFINITE);
 
     for (int i = 0; i < 10000; ++i)
     {
@@ -37,17 +33,15 @@ void __stdcall NewDelete(LPVOID lpEvent)
         {
             CTest* t = new CTest;
             delete t;
-        }   
+        }
         PROFILE_END(L"new/delete");
     }
 
 }
 
-void __stdcall PoolAllocFree(LPVOID lpEvent)
+void __stdcall PoolAllocFree()
 {
-    HANDLE hEvent = (HANDLE)lpEvent;
-
-    WaitForSingleObject(lpEvent, INFINITE);
+    WaitForSingleObject(hEvent, INFINITE);
 
     for (int i = 0; i < 10000; ++i)
     {
@@ -61,10 +55,27 @@ void __stdcall PoolAllocFree(LPVOID lpEvent)
     }
 }
 
+void SetPool()
+{
+    CTest** arrPool = new CTest * [10000];
+
+    for (int i = 0; i < 10000; ++i)
+    {
+        arrPool[i] = g_Pool.Alloc();
+    }
+
+    for (int i = 0; i < 10000; ++i)
+    {
+        g_Pool.Free(arrPool[i]);
+    }
+
+    delete[] arrPool;
+}
+
 int main(void)
 {
     const int iThreadCount = 4;
-    HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    
 
     if (hEvent == 0)
         return -1;
@@ -73,16 +84,17 @@ int main(void)
 
     InitProfiler();
 
+    ResetEvent(hEvent);
+
+
     ////////////////////////////////////////////////////////////
     //// new delete
     ////////////////////////////////////////////////////////////
 
-    hThreads[0] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, &hEvent, NULL, NULL);
-    hThreads[1] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, &hEvent, NULL, NULL);
-    hThreads[2] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, &hEvent, NULL, NULL);
-    hThreads[3] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, &hEvent, NULL, NULL);
-    /*hThreads[4] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, &hEvent, NULL, NULL);
-    hThreads[5] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, &hEvent, NULL, NULL);*/
+    hThreads[0] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, NULL, NULL, NULL);
+    hThreads[1] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, NULL, NULL, NULL);
+    hThreads[2] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, NULL, NULL, NULL);
+    hThreads[3] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, NULL, NULL, NULL);
 
     SetEvent(hEvent);
 
@@ -94,12 +106,12 @@ int main(void)
 
     ResetEvent(hEvent);
 
-    hThreads[0] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, &hEvent, NULL, NULL);
-    hThreads[1] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, &hEvent, NULL, NULL);
-    hThreads[2] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, &hEvent, NULL, NULL);
-    hThreads[3] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, &hEvent, NULL, NULL);
-    /*hThreads[4] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, &hEvent, NULL, NULL);
-    hThreads[5] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, &hEvent, NULL, NULL);*/
+    hThreads[0] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, NULL, NULL, NULL);
+    hThreads[1] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, NULL, NULL, NULL);
+    hThreads[2] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, NULL, NULL, NULL);
+    hThreads[3] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, NULL, NULL, NULL);
+
+    SetPool();
 
     SetEvent(hEvent);
 

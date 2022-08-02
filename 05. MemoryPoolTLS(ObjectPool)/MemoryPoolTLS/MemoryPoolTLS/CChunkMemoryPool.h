@@ -38,14 +38,14 @@ CChunkMemoryPool<T>::~CChunkMemoryPool()
 template<typename T>
 T* CChunkMemoryPool<T>::Alloc()
 {
-	T* ret = &(m_Chunk->_tData[m_Chunk->_dwIndex++]._tData);
+	CChunk<T>* pChunk = m_Chunk;
+	T* ret = &(pChunk->_tData[pChunk->_dwIndex]._tData);
+	++pChunk->_dwIndex;
 
 	// Index 체크해서 다 쓴 청크면 다시 alloc 받아와야함
-	if (m_Chunk->_dwIndex >= dfCHUNK_NODE_COUNT)
-	{
+	if (pChunk->_dwIndex == dfCHUNK_NODE_COUNT)
 		m_Chunk = m_MainPool->Alloc();
-	}
-
+	
 	return ret;
 }
 

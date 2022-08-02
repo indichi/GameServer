@@ -2,11 +2,11 @@
 #include <thread>
 #include <conio.h>
 
-#include "CLanServer.h"
+#include "CNetServer.h"
 #include "CPacket.h"
 #include "CMemoryPoolTLS.h"
 
-CLanServer::CLanServer(int iSessionMaxCount)
+CNetServer::CNetServer(int iSessionMaxCount)
     : m_ListenSocket(INVALID_SOCKET)
     , m_ArrSession(new st_SESSION[iSessionMaxCount])
     , m_hIOCP(INVALID_HANDLE_VALUE)
@@ -26,7 +26,7 @@ CLanServer::CLanServer(int iSessionMaxCount)
     }
 }
 
-CLanServer::~CLanServer()
+CNetServer::~CNetServer()
 {
     CloseHandle(m_hIOCP);
     CloseHandle(m_hAcceptThread);
@@ -44,7 +44,7 @@ CLanServer::~CLanServer()
     timeEndPeriod(1);
 }
 
-bool CLanServer::Start(const WCHAR* szIp, unsigned short usPort, int iWorkerThreadCount, bool bNagle, int iMaxUserCount)
+bool CNetServer::Start(const WCHAR* szIp, unsigned short usPort, int iWorkerThreadCount, bool bNagle, int iMaxUserCount)
 {
     timeBeginPeriod(1);
 
@@ -92,16 +92,16 @@ bool CLanServer::Start(const WCHAR* szIp, unsigned short usPort, int iWorkerThre
 
     //HANDLE hThread;
     for (int i = 0; i < iWorkerThreadCount; i++) {
-        m_hWorkerThreads[i] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)CLanServer::Work, this, 0, nullptr);
+        m_hWorkerThreads[i] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)CNetServer::Work, this, 0, nullptr);
         if (m_hWorkerThreads[i] == NULL)
             return 1;
     }
 
-    m_hAcceptThread = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)CLanServer::Accept, this, 0, nullptr);
+    m_hAcceptThread = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)CNetServer::Accept, this, 0, nullptr);
     if (m_hAcceptThread == NULL)
         return 1;
 
-    m_hMonitoringThread = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)CLanServer::Monitoring, this, 0, nullptr);
+    m_hMonitoringThread = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)CNetServer::Monitoring, this, 0, nullptr);
     if (m_hMonitoringThread == NULL)
         return 1;
 
@@ -129,16 +129,16 @@ bool CLanServer::Start(const WCHAR* szIp, unsigned short usPort, int iWorkerThre
     return true;
 }
 
-void CLanServer::Stop()
+void CNetServer::Stop()
 {
 }
 
-int CLanServer::GetSessionCount() const
+int CNetServer::GetSessionCount() const
 {
     // return (int)m_SessionMap.size();
 }
 
-bool CLanServer::Disconnect(UINT64 dwSessionID)
+bool CNetServer::Disconnect(UINT64 dwSessionID)
 {
     /*AcquireSRWLockExclusive(&m_SeesionMapLocker);
     auto iter = m_SessionMap.find(dwSessionID);
@@ -166,7 +166,7 @@ bool CLanServer::Disconnect(UINT64 dwSessionID)
     return true;
 }
 
-void CLanServer::ReleaseSession(st_SESSION* pSession)
+void CNetServer::ReleaseSession(st_SESSION* pSession)
 {
     // IO_COUNT 세션 사용여부 개념(ref cnt)로 사용
     long long comp = 0;
@@ -191,7 +191,7 @@ void CLanServer::ReleaseSession(st_SESSION* pSession)
     //m_SessionPool.Free(pSession);
 }
 
-void CLanServer::RecvPost(st_SESSION* pSession)
+void CNetServer::RecvPost(st_SESSION* pSession)
 {
     int iRet;
     int iError;
@@ -237,7 +237,7 @@ void CLanServer::RecvPost(st_SESSION* pSession)
     }
 }
 
-void CLanServer::SendPost(st_SESSION* pSession)
+void CNetServer::SendPost(st_SESSION* pSession)
 {
     if (pSession->sendQ.GetSize() > 0 && InterlockedExchange((unsigned int*)&pSession->bCanSend, FALSE) == TRUE)
     //if (pSession->sendQ.GetUseSize() > 0 && InterlockedExchange((unsigned int*)&pSession->bCanSend, FALSE) == TRUE)
@@ -309,22 +309,22 @@ void CLanServer::SendPost(st_SESSION* pSession)
     }
 }
 
-UINT CLanServer::GetIndex(UINT64 uiSessionID)
+UINT CNetServer::GetIndex(UINT64 uiSessionID)
 {
     return (uiSessionID & 0xffff000000000000) >> 48;
 }
 
-CLanServer::st_SESSION* CLanServer::FindSession(UINT64 uiSessionID)
+CNetServer::st_SESSION* CNetServer::FindSession(UINT64 uiSessionID)
 {
     UINT index = GetIndex(uiSessionID);
     
-    if (index >= USER_MAX)
+    if (index >= 10000)
         return nullptr;
     else
         return &m_ArrSession[index];
 }
 
-UINT64 CLanServer::CombineIndexID(UINT uiIndex, UINT uiID)
+UINT64 CNetServer::CombineIndexID(UINT uiIndex, UINT uiID)
 {
     UINT64 ret = uiID;
     UINT64 index = uiIndex;
@@ -332,7 +332,7 @@ UINT64 CLanServer::CombineIndexID(UINT uiIndex, UINT uiID)
     return ret | (index << 48);
 }
 
-bool CLanServer::SendPacket(UINT64 dwSessionID, CPacket* pPacket)
+bool CNetServer::SendPacket(UINT64 dwSessionID, CPacket* pPacket)
 {
     st_SESSION* pSession = FindSession(dwSessionID);
     if (pSession == nullptr)
@@ -350,12 +350,9 @@ bool CLanServer::SendPacket(UINT64 dwSessionID, CPacket* pPacket)
     // CPacket 메모리 풀에서 alloc, sendQ에 Enqueue 전에 참조 카운트 증가
     CPacket* newPacket = CPacket::Alloc();
 
-    stHeader.len = pPacket->GetDataSize();
+    newPacket->SetNetHeader(pPacket);   // 헤더 세팅 + payload붙이기
+    newPacket->Encoding();
 
-    newPacket->PutData((char*)&stHeader, sizeof(st_HEADER));
-    newPacket->PutData(pPacket->GetReadBufferPtr(), stHeader.len);
-
-    //pSession->sendQ.Enqueue((char*)&newPacket, sizeof(CPacket*));
     newPacket->AddRefCount();
     pSession->sendQ.Enqueue(newPacket);
 
@@ -370,7 +367,7 @@ bool CLanServer::SendPacket(UINT64 dwSessionID, CPacket* pPacket)
     return true;
 }
 
-void __stdcall CLanServer::Accept(CLanServer* pThis)
+void __stdcall CNetServer::Accept(CNetServer* pThis)
 {
     UINT64 uiSessionID = 1;
 
@@ -456,7 +453,7 @@ void __stdcall CLanServer::Accept(CLanServer* pThis)
     }
 }
 
-void __stdcall CLanServer::Work(CLanServer* pThis)
+void __stdcall CNetServer::Work(CNetServer* pThis)
 {
     int iRet;
 
@@ -551,7 +548,7 @@ void __stdcall CLanServer::Work(CLanServer* pThis)
     }
 }
 
-void __stdcall CLanServer::Monitoring(CLanServer* pThis)
+void __stdcall CNetServer::Monitoring(CNetServer* pThis)
 {
     while (1)
     {

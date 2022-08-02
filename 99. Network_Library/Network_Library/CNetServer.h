@@ -10,18 +10,23 @@
 #include "CPacket.h"
 
 
-#define USER_MAX    (10000)
+#define dfCODE  (0x89)
+#define dfKEY   (0xa9)
 
 using namespace std;
 using namespace procademy;
 
-class CLanServer
+class CNetServer
 {
+    friend class CPacket;
 private:
 #pragma pack(push, 1)
     struct st_HEADER
     {
-        short   len;
+        unsigned char       code;
+        short               len;
+        unsigned char       rKey;       // ·£´ýÅ°
+        unsigned char       checkSum;
     };
 #pragma pack(pop)
 
@@ -56,11 +61,11 @@ private:
         int iRecvTPS;
     };
 public:
-    CLanServer() = delete;
-    CLanServer(const CLanServer& other) = delete;
-    CLanServer(int iSessionMaxCount);
+    CNetServer() = delete;
+    CNetServer(const CNetServer& other) = delete;
+    CNetServer(int iSessionMaxCount);
     
-    virtual ~CLanServer();
+    virtual ~CNetServer();
 
     bool Start(const WCHAR* szIp, unsigned short usPort, int iWorkerThreadCount, bool bNagle, int iMaxUserCount);
     void Stop();
@@ -81,9 +86,9 @@ public:
     //virtual void OnWorkerThreadBegin() = 0;
     //virtual void OnWorkerThreadEnd() = 0;
 private:
-    static void __stdcall Accept(CLanServer* pThis);
-    static void __stdcall Work(CLanServer* pThis);
-    static void __stdcall Monitoring(CLanServer* pThis);
+    static void __stdcall Accept(CNetServer* pThis);
+    static void __stdcall Work(CNetServer* pThis);
+    static void __stdcall Monitoring(CNetServer* pThis);
 
     void ReleaseSession(st_SESSION* pSession);
 
@@ -105,6 +110,4 @@ private:
     st_MONITORING                       m_stMonitoring;
     st_SESSION*                         m_ArrSession;
     CLFStack<UINT>                      m_IndexStack;
-    //stack<UINT>                         m_IndexStack;
-    //SRWLOCK                             m_IndexStackLocker;
 };

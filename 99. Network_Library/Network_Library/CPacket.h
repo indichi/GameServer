@@ -1,6 +1,9 @@
 #ifndef  __PACKET__
 #define  __PACKET__
 
+//#include "CLanServer.h"
+//#include "CNetServer.h"
+
 #include <Windows.h>
 
 #include "CChunk.h"
@@ -110,6 +113,20 @@ public:
     /* ============================================================================= */
     void AddRefCount();
     void SubRefCount();
+
+    /* ============================================================================= */
+    // 헤더 세팅 관련 함수 (LanServer, NetServer 용)
+    /* ============================================================================= */
+    void SetLanHeader();
+    void SetNetHeader(volatile CPacket* pPayload);  // header 세팅 + payload 붙이기
+
+    unsigned char MakeCheckSum(BYTE* pStart, int iSize);
+
+    /* ============================================================================= */
+    // 인코딩, 디코딩 관련 함수 (NetServer 용)
+    /* ============================================================================= */
+    void Encoding();
+    bool Decoding();    // return : 체크섬 판단 후 디코딩 성공 여부
 
     /* ============================================================================= */
     // 연산자 오버로딩

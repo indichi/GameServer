@@ -19,8 +19,8 @@ public:
     bool Free(volatile T* data);
 
 private:
-    CLFMemoryPool<CChunk<T>>*                           m_MainPool;
     DWORD                                               m_dwTLSindex;
+    CLFMemoryPool<CChunk<T>>*                           m_MainPool;
 };
 
 template<typename T>
@@ -41,16 +41,18 @@ CMemoryPoolTLS<T>::~CMemoryPoolTLS()
 template<typename T>
 T* CMemoryPoolTLS<T>::Alloc()
 {
+    //DWORD dwIndex = m_dwTLSindex;
     CChunkMemoryPool<T>* chunkPool = (CChunkMemoryPool<T>*)TlsGetValue(m_dwTLSindex);
 
-    // 존재하지 않음 -> 쓰레드 첫 등록 -> map에 ThreadID, 메모리풀 등록 후 Alloc
+    // 존재하지 않음 -> 쓰레드 첫 등록 -> TLS에 Set
     if (chunkPool == nullptr)
     {
         chunkPool = new CChunkMemoryPool<T>(m_MainPool);
-        if (!TlsSetValue(m_dwTLSindex, chunkPool))
-        {
-            // 크래쉬
-        }
+        TlsSetValue(m_dwTLSindex, chunkPool);
+        //if (!TlsSetValue(m_dwTLSindex, chunkPool))
+        //{
+        //    // 크래쉬
+        //}
     }
 
     return chunkPool->Alloc();

@@ -17,10 +17,11 @@ public:
         T           _tData;
     };
 
-    st_DATA                 _tData[dfCHUNK_NODE_COUNT];
+    alignas(8)DWORD                   _dwIndex;
+    DWORD                             _dwFreeCount;
 
-    DWORD                   _dwFreeCount;
-    DWORD                   _dwIndex;
+    st_DATA                 _tData[dfCHUNK_NODE_COUNT];
+    
 private:
 };
 

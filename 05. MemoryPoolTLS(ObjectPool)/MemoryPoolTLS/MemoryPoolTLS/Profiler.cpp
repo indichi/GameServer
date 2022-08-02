@@ -44,11 +44,11 @@ bool ProfilingEnd(const WCHAR* szName)
     UINT64 iProfilingTime;
     st_PROFILE_DATA* pData = nullptr;
 
+    QueryPerformanceCounter(&lEndTime);
+
     GetProfileData(szName, &pData);
     if (pData == nullptr)
         return false;
-
-    QueryPerformanceCounter(&lEndTime);
     iProfilingTime = (lEndTime.QuadPart - pData->_lStartTime.QuadPart);
 
     if (pData->_iMax[0] == 0)

@@ -1,5 +1,8 @@
 #include <iostream>
 #include <tchar.h>
+#include "CLanServer.h"
+#include "CNetServer.h"
+
 #include "CPacket.h"
 #include "CMemoryPool.h"
 #include "CMemoryPoolTLS.h"
@@ -115,6 +118,127 @@ void CPacket::SubRefCount()
         Clear();
         m_PacketPoolTLS.Free(this);
     }
+}
+
+void CPacket::SetLanHeader()
+{
+}
+
+void CPacket::SetNetHeader(volatile CPacket* pPayload)
+{
+    unsigned char checkSum;
+    unsigned char rKey;
+
+    int iSize = pPayload->mDataSize;
+    int iTotal = 0;
+
+    // 체크섬 생성
+    checkSum = MakeCheckSum((BYTE*)pPayload->mData, iSize);
+
+    // 랜덤키 생성 (srand 넣어야 할까 고민좀 해보자..)
+    //srand(time(NULL));
+    rKey = rand();
+
+    CNetServer::st_HEADER stHeader = { dfCODE, iSize, rKey, checkSum };
+
+    PutData((char*)&stHeader, sizeof(stHeader));
+    PutData((char*)pPayload->mData, iSize);
+}
+
+unsigned char CPacket::MakeCheckSum(BYTE* pStart, int iSize)
+{
+    int iTotal = 0;
+
+    for (int i = 0; i < iSize; ++i)
+    {
+        iTotal += *pStart;
+        ++pStart;
+    }
+
+    return (unsigned char)(iTotal % 256);
+}
+
+void CPacket::Encoding()
+{
+    // checkSum ~ payload 까지 인코딩
+    CNetServer::st_HEADER* pHeader = (CNetServer::st_HEADER*)mData;
+    unsigned char* pPos = (unsigned char*)&pHeader->checkSum;
+
+    int iLen = pHeader->len;
+    unsigned char randKey = pHeader->rKey;
+    unsigned char fixKey = dfKEY;
+
+    unsigned char randValue;
+    unsigned char fixValue;
+
+    // 최초 바이트 인코딩 -> 그 다음 바이트 부터는 전 바이트 영향 받는 방식이어서 최초 설정해줘야 함
+    *pPos = (*pPos ^ (randKey + 1));
+    randValue = *pPos;
+
+    *pPos = *pPos ^ (fixKey + 1);
+    fixValue = *pPos;
+
+    ++pPos;
+
+    for (int i = 1; i < iLen; ++i)
+    {
+        *pPos = *pPos ^ (randValue + randKey + i + 1);
+        randValue = *pPos;
+
+        *pPos = *pPos ^ (fixValue + fixKey + i + 1);
+        fixValue = *pPos;
+
+        ++pPos;
+    }
+}
+
+bool CPacket::Decoding()
+{
+    // checkSum ~ payload 까지 디코딩
+    CNetServer::st_HEADER* pHeader = (CNetServer::st_HEADER*)mData;
+    unsigned char* pPos = (unsigned char*)&pHeader->checkSum;
+
+    int iLen = pHeader->len;
+    unsigned char randKey = pHeader->rKey;
+    unsigned char fixKey = dfKEY;
+
+    unsigned char prevRand;
+    unsigned char prevFix;
+
+    unsigned char prevRandTemp;
+    unsigned char prevFixTemp;
+
+    // 최초 바이트 인코딩 -> CheckSum 확인
+    prevFix = *pPos;
+
+    *pPos = *pPos ^ (fixKey + 1);
+    prevRand = *pPos;
+
+    *pPos = (*pPos ^ (randKey + 1));
+
+    ++pPos;
+
+    for (int i = 1; i < iLen; ++i)
+    {
+        prevFixTemp = prevFix;
+        prevRandTemp = prevRand;
+
+        prevFix = *pPos;
+
+        *pPos = *pPos ^ (prevFixTemp + fixKey + i + 1);
+        prevRand = *pPos;
+
+        *pPos = (*pPos ^ (prevRandTemp + randKey + i + 1));
+
+        ++pPos;
+    }
+
+    pPos = ((unsigned char*)&pHeader->checkSum) + 1;    // payload 부분
+
+    if (pHeader->checkSum != MakeCheckSum(pPos, iLen))
+        return false;
+        
+    return true;
 }
 
 CPacket& CPacket::operator=(const CPacket& rhs)

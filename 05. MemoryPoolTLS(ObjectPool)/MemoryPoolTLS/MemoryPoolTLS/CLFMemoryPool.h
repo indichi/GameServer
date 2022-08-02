@@ -68,9 +68,8 @@ namespace procademy
 
         UINT64                  m_lDebugIndex;
 #endif
-
         alignas(16) st_CMP_NODE m_pTop;
-        UINT64                  m_uiID;
+        // UINT64                  m_uiID;
 
         long                    m_lCapacity;
         long                    m_lUseCount;
@@ -83,7 +82,7 @@ namespace procademy
     template <typename T>
     CLFMemoryPool<T>::CLFMemoryPool(bool bUsePlacement)
         : m_pTop{ nullptr, 0 }
-        , m_uiID(0)
+        //, m_uiID(0)
 #ifdef __DEBUG
         , m_pMemoryLog(new st_DEBUG[dfMEMORY_LOG_CNT])
         , m_lDebugIndex(-1)
