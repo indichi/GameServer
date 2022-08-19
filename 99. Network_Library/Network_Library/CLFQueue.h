@@ -6,7 +6,6 @@
 using namespace procademy;
 
 #define DEBUG_CNT   (10000)
-//#define DEBUGING
 
 template <typename T>
 class CLFQueue
@@ -44,7 +43,7 @@ private:
     alignas(64)
     UINT64                      m_uiDeqTPS;
 
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
 public:
     enum class e_TYPE
     {
@@ -88,7 +87,7 @@ public:
 
         m_pTail = m_pHead;
 
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
         m_uiDebugIndex = -1;
         m_uiDebugCnt = 0;
         m_pDebug = new st_DEBUG[DEBUG_CNT];
@@ -99,6 +98,7 @@ public:
     {}
 
     int GetSize() const { return m_iSize; }
+    int GetPoolAllocSize() const { return m_Pool->GetCapacity(); }
     UINT64 GetEnqTPS() const { return m_uiEnqTPS; }
     UINT64 GetDeqTPS() const { return m_uiDeqTPS; }
     void InitTPS() 
@@ -114,7 +114,7 @@ public:
         pNewNode->_tData = tData;
         pNewNode->_pNext = nullptr;
 
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
         UINT64 uiIndex = InterlockedIncrement(&m_uiDebugIndex);
         uiIndex %= DEBUG_CNT;
 
@@ -134,7 +134,7 @@ public:
                 continue;
             }
 
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
             pDebug->dwThreadID = GetCurrentThreadId();
             pDebug->eType = e_TYPE::ENQUEUE;
             pDebug->pOrigin = m_pTail;
@@ -150,16 +150,16 @@ public:
         }
 
         int iSize = InterlockedIncrement((long*)&m_iSize);
-        InterlockedIncrement(&m_uiEnqTPS);
+        //InterlockedIncrement(&m_uiEnqTPS);
 
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
         pDebug->iSize = iSize;
 #endif
     }
 
     bool Dequeue(volatile T* pOut)
     {
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
         UINT64 uiIndex = InterlockedIncrement(&m_uiDebugIndex);
         uiIndex %= DEBUG_CNT;
 
@@ -173,7 +173,7 @@ public:
         if (iSize < 0)
         {
             InterlockedIncrement((long*)&m_iSize);
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
             pDebug->dwThreadID = GetCurrentThreadId();
             pDebug->eType = e_TYPE::DEQUEUE_SIZE_CHECK;
             pDebug->pOrigin = nullptr;
@@ -193,6 +193,13 @@ public:
 
         while (1)
         {
+#ifdef __LFQUEUE_DEBUG
+            st_CMP stCmp;
+
+            stCmp._pNode = m_pHead;
+            stCmp._uiID = m_uiHeadID;
+#endif
+
             stCmpTail._pNode = m_pTail;
             stCmpTail._uiID = m_uiTailID;
 
@@ -219,7 +226,7 @@ public:
 
             tData = pHeadNext->_tData;
 
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
             pDebug->dwThreadID = GetCurrentThreadId();
             pDebug->eType = e_TYPE::DEQUEUE;
             pDebug->pOrigin = m_pHead;
@@ -231,7 +238,7 @@ public:
             if (InterlockedCompareExchange128((LONG64*)&m_pHead, (LONG64)m_uiHeadID + 1, (LONG64)m_pHead->_pNext, (LONG64*)&stCmpHead))
             //if (InterlockedCompareExchange128((LONG64*)&m_pHead, (LONG64)m_uiHeadID + 1, (LONG64)stCmpHead._pNode->_pNext, (LONG64*)&stCmpHead))
             {
-#ifdef DEBUGING
+#ifdef __LFQUEUE_DEBUG
                 pDebug->iSize = iSize;
                 pDebug->pChangeNode = pDebug->pOrigin->_pNext;
                 pDebug->pChangeNodeNext = pDebug->pChangeNode->_pNext;
@@ -242,7 +249,7 @@ public:
             }
         }
 
-        InterlockedIncrement(&m_uiDeqTPS);
+        //InterlockedIncrement(&m_uiDeqTPS);
         return true;
     }
 };

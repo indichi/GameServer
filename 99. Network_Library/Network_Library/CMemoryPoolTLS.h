@@ -17,9 +17,9 @@ public:
 
     T* Alloc();
     bool Free(volatile T* data);
-
+    int GetAllocChunkSize() { return m_MainPool->GetCapacity(); }
 private:
-    CLFMemoryPool<CChunk<T>>* m_MainPool;
+    CLFMemoryPool<CChunk<T>>*                           m_MainPool;
     DWORD                                               m_dwTLSindex;
 };
 

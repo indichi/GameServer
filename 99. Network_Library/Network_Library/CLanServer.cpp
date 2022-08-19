@@ -253,7 +253,11 @@ void CLanServer::SendPost(st_SESSION* pSession)
             return;
         }
 
-        int iPacketCount = iUseSize;
+        int iPacketCount = 0;
+        if (iUseSize > 100)
+            iPacketCount = 100;
+        else
+            iPacketCount = iUseSize;
         /*int iPacketCount = iUseSize / sizeof(CPacket*);
         if (iPacketCount > 100)
         {

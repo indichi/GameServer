@@ -47,7 +47,7 @@ CPacket::~CPacket()
 
 CPacket* CPacket::Alloc()
 {
-    CPacket* ret = m_PacketPoolTLS.Alloc();
+    CPacket* ret = s_PacketPoolTLS.Alloc();
     ret->mRefCount = 1;
     return ret;
 }
@@ -62,7 +62,7 @@ bool CPacket::Free(volatile CPacket* pPacket)
         pPacket->mReadPos = 0;
         pPacket->mWritePos = 0;
         pPacket->mDataSize = 0;
-        return m_PacketPoolTLS.Free(pPacket);
+        return s_PacketPoolTLS.Free(pPacket);
     }
 
     return true;
@@ -116,7 +116,7 @@ void CPacket::SubRefCount()
     if (iRefCnt == 0)
     {
         Clear();
-        m_PacketPoolTLS.Free(this);
+        s_PacketPoolTLS.Free(this);
     }
 }
 
@@ -124,7 +124,7 @@ void CPacket::SetLanHeader()
 {
 }
 
-void CPacket::SetNetHeader(volatile CPacket* pPayload)
+void CPacket::SetNetPacket(volatile CPacket* pPayload)
 {
     unsigned char checkSum;
     unsigned char rKey;
@@ -137,9 +137,9 @@ void CPacket::SetNetHeader(volatile CPacket* pPayload)
 
     // 랜덤키 생성 (srand 넣어야 할까 고민좀 해보자..)
     //srand(time(NULL));
-    rKey = rand();
+    rKey = rand() % 256;
 
-    CNetServer::st_HEADER stHeader = { dfCODE, iSize, rKey, checkSum };
+    CNetServer::st_HEADER stHeader = { s_PacketCode, iSize, rKey, checkSum };
 
     PutData((char*)&stHeader, sizeof(stHeader));
     PutData((char*)pPayload->mData, iSize);
@@ -164,28 +164,19 @@ void CPacket::Encoding()
     CNetServer::st_HEADER* pHeader = (CNetServer::st_HEADER*)mData;
     unsigned char* pPos = (unsigned char*)&pHeader->checkSum;
 
-    int iLen = pHeader->len;
+    int iLen = pHeader->len + 1; // checksum 부분 길이 추가
     unsigned char randKey = pHeader->rKey;
-    unsigned char fixKey = dfKEY;
+    unsigned char fixKey = s_PacketKey;
 
-    unsigned char randValue;
-    unsigned char fixValue;
+    unsigned char randValue = 0;
+    unsigned char fixValue = 0;
 
-    // 최초 바이트 인코딩 -> 그 다음 바이트 부터는 전 바이트 영향 받는 방식이어서 최초 설정해줘야 함
-    *pPos = (*pPos ^ (randKey + 1));
-    randValue = *pPos;
-
-    *pPos = *pPos ^ (fixKey + 1);
-    fixValue = *pPos;
-
-    ++pPos;
-
-    for (int i = 1; i < iLen; ++i)
+    for (int i = 1; i <= iLen; ++i)
     {
-        *pPos = *pPos ^ (randValue + randKey + i + 1);
+        *pPos = *pPos ^ (randValue + randKey + i);
         randValue = *pPos;
 
-        *pPos = *pPos ^ (fixValue + fixKey + i + 1);
+        *pPos = *pPos ^ (fixValue + fixKey + i);
         fixValue = *pPos;
 
         ++pPos;
@@ -198,44 +189,34 @@ bool CPacket::Decoding()
     CNetServer::st_HEADER* pHeader = (CNetServer::st_HEADER*)mData;
     unsigned char* pPos = (unsigned char*)&pHeader->checkSum;
 
-    int iLen = pHeader->len;
+    int iLen = pHeader->len + 1; // checksum 부분 길이 추가
     unsigned char randKey = pHeader->rKey;
-    unsigned char fixKey = dfKEY;
+    unsigned char fixKey = s_PacketKey;
 
     unsigned char prevRand;
     unsigned char prevFix;
 
-    unsigned char prevRandTemp;
-    unsigned char prevFixTemp;
+    unsigned char prevRandTemp = 0;
+    unsigned char prevFixTemp = 0;
 
-    // 최초 바이트 인코딩 -> CheckSum 확인
-    prevFix = *pPos;
-
-    *pPos = *pPos ^ (fixKey + 1);
-    prevRand = *pPos;
-
-    *pPos = (*pPos ^ (randKey + 1));
-
-    ++pPos;
-
-    for (int i = 1; i < iLen; ++i)
+    for (int i = 1; i <= iLen; ++i)
     {
-        prevFixTemp = prevFix;
-        prevRandTemp = prevRand;
-
         prevFix = *pPos;
 
-        *pPos = *pPos ^ (prevFixTemp + fixKey + i + 1);
+        *pPos = *pPos ^ (prevFixTemp + fixKey + i);
         prevRand = *pPos;
 
-        *pPos = (*pPos ^ (prevRandTemp + randKey + i + 1));
+        *pPos = *pPos ^ (prevRandTemp + randKey + i);
+
+        prevFixTemp = prevFix;
+        prevRandTemp = prevRand;
 
         ++pPos;
     }
 
-    pPos = ((unsigned char*)&pHeader->checkSum) + 1;    // payload 부분
-
-    if (pHeader->checkSum != MakeCheckSum(pPos, iLen))
+    pPos = ((unsigned char*)&pHeader->checkSum) + 1;    // payload 부분 찾기
+    
+    if (pHeader->checkSum != MakeCheckSum(pPos, pHeader->len))
         return false;
         
     return true;

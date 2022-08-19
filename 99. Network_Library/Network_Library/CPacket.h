@@ -24,10 +24,15 @@ private:
 
     virtual	~CPacket();
 
-    inline static CMemoryPoolTLS<CPacket> m_PacketPoolTLS;
+    inline static CMemoryPoolTLS<CPacket> s_PacketPoolTLS;
 public:
     static CPacket* Alloc();
     static bool Free(volatile CPacket* pPacket);
+
+    static int GetPacketPoolAllocSize() { return s_PacketPoolTLS.GetAllocChunkSize() * dfCHUNK_NODE_COUNT; }
+
+    static inline unsigned char s_PacketCode = 0;
+    static inline unsigned char s_PacketKey = 0;
 
     /*---------------------------------------------------------------
     Packet Enum.
@@ -118,7 +123,7 @@ public:
     // 헤더 세팅 관련 함수 (LanServer, NetServer 용)
     /* ============================================================================= */
     void SetLanHeader();
-    void SetNetHeader(volatile CPacket* pPayload);  // header 세팅 + payload 붙이기
+    void SetNetPacket(volatile CPacket* pPayload);  // header 세팅 + payload 붙이기
 
     unsigned char MakeCheckSum(BYTE* pStart, int iSize);
 

@@ -30,19 +30,20 @@ namespace procademy
         struct st_NODE
         {
             UINT64                  _uiID;
-            st_NODE* _pNext;
+            st_NODE*                _pNext;
             UINT64                  _uiFreeFlag;
-            CLFMemoryPool* _pCheckStart;
+            CLFMemoryPool*          _pCheckStart;
             T                       _tData;
-            CLFMemoryPool* _pCheckEnd;
+            CLFMemoryPool*          _pCheckEnd;
         };
 
         struct st_CMP_NODE
         {
-            st_NODE* _pNode;
+            st_NODE*                _pNode;
             UINT64                  _uiID;
         };
 
+#ifdef __DEBUG
         enum class e_TYPE
         {
             TYPE_PUSH_TRY = 0,
@@ -57,11 +58,13 @@ namespace procademy
             e_TYPE          _eType;
         };
 
+        st_DEBUG* m_pMemoryLog;
+        UINT64                  m_lDebugIndex;
+#endif
+
         alignas(16) st_CMP_NODE m_pTop;
         UINT64                  m_uiID;
-        st_DEBUG* m_pMemoryLog;
-
-        UINT64                  m_lDebugIndex;
+        
         long                    m_lCapacity;
         long                    m_lUseCount;
 
@@ -74,11 +77,13 @@ namespace procademy
     CLFMemoryPool<T>::CLFMemoryPool(bool bUsePlacement)
         : m_pTop{ nullptr, 0 }
         , m_uiID(0)
-        , m_pMemoryLog(new st_DEBUG[dfMEMORY_LOG_CNT])
-        , m_lDebugIndex(-1)
         , m_lCapacity(0)
         , m_lUseCount(0)
         , m_bUsePlacement(bUsePlacement)
+#ifdef __DEBUG
+        , m_pMemoryLog(new st_DEBUG[dfMEMORY_LOG_CNT])
+        , m_lDebugIndex(-1)
+#endif
     {
     }
 
@@ -102,12 +107,15 @@ namespace procademy
         st_NODE* pCopyNode;
         T* pData;
 
+#ifdef __DEBUG
         // 메모리 로깅 관련 인덱스, 카운트 설정
         ULONG64 iIndex;
 
         iIndex = InterlockedIncrement(&m_lDebugIndex);
         iIndex %= dfMEMORY_LOG_CNT;
         st_DEBUG* stDebug = &m_pMemoryLog[iIndex];
+#endif
+
         UINT64 uiID = 0;
 
         do
@@ -129,7 +137,7 @@ namespace procademy
 
                 InterlockedIncrement(&m_lCapacity);
 
-#ifdef _DEBUG
+#ifdef __DEBUG
                 // 메모리 로깅..
                 stDebug->_dwThreadID = GetCurrentThreadId();
                 stDebug->_eType = e_TYPE::TYPE_POP_TRY;
@@ -138,7 +146,7 @@ namespace procademy
                 break;
             }
 
-#ifdef _DEBUG
+#ifdef __DEBUG
             // 메모리 로깅..
             stDebug->_dwThreadID = GetCurrentThreadId();
             stDebug->_eType = e_TYPE::TYPE_POP_TRY;
@@ -158,7 +166,7 @@ namespace procademy
 
         InterlockedIncrement(&m_lUseCount);
 
-#ifdef _DEBUG
+#ifdef __DEBUG
         // 메모리 로깅..
         iIndex = InterlockedIncrement(&m_lDebugIndex);
         iIndex %= dfMEMORY_LOG_CNT;
@@ -178,6 +186,7 @@ namespace procademy
         st_CMP_NODE stCmpNode;
         st_NODE* pPushNode = (st_NODE*)(((char*)data) - sizeof(CLFMemoryPool*) - sizeof(UINT64) - sizeof(UINT64) - sizeof(st_NODE*));
 
+#ifdef __DEBUG
         // 메모리 로깅 관련 인덱스, 카운트 설정
         ULONG64 iIndex;
 
@@ -231,6 +240,7 @@ namespace procademy
                 g_Dump.Crash();
             }
         }
+#endif
 
         pPushNode->_uiID++;
         pPushNode->_uiFreeFlag = dfSTATE_RELEASE;
@@ -242,7 +252,7 @@ namespace procademy
 
             pPushNode->_pNext = stCmpNode._pNode;
 
-#ifdef _DEBUG
+#ifdef __DEBUG
             // 메모리 로깅..
             stDebug->_dwThreadID = GetCurrentThreadId();
             stDebug->_eType = e_TYPE::TYPE_PUSH_TRY;
@@ -255,7 +265,7 @@ namespace procademy
 
         InterlockedDecrement(&m_lUseCount);
 
-#ifdef _DEBUG
+#ifdef __DEBUG
         // 메모리 로깅..
         iIndex = InterlockedIncrement(&m_lDebugIndex);
         iIndex %= dfMEMORY_LOG_CNT;

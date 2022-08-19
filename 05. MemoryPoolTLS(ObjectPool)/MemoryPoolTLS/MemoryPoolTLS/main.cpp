@@ -10,11 +10,7 @@ HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 class CTest
 {
 public:
-    CTest()
-        : a()
-    {
-        //memset(a, 1, sizeof(int) * 350);
-    }
+    CTest() {}
     ~CTest() {}
 private:
     int     a[350];

@@ -44,7 +44,7 @@ namespace procademy
 
         struct st_CMP_NODE
         {
-            st_NODE* _pNode;
+            st_NODE*                _pNode;
             UINT64                  _uiID;
         };
 
@@ -71,10 +71,9 @@ namespace procademy
         alignas(16) st_CMP_NODE m_pTop;
         // UINT64                  m_uiID;
 
-        long                    m_lCapacity;
-        long                    m_lUseCount;
+        alignas(64) long                    m_lCapacity;
+        alignas(64) long                    m_lUseCount;
 
-        alignas(64)
         bool                    m_bUsePlacement;
         CCrashDump*             g_Dump;
     };
@@ -104,6 +103,8 @@ namespace procademy
             m_pTop._pNode = m_pTop._pNode->_pNext;
             delete pTemp;
         }
+
+        delete g_Dump;
     }
 
     template <typename T>

@@ -19,8 +19,8 @@ public:
     bool Free(volatile T* data);
 
 private:
-    DWORD                                               m_dwTLSindex;
     CLFMemoryPool<CChunk<T>>*                           m_MainPool;
+    DWORD                                               m_dwTLSindex;
 };
 
 template<typename T>

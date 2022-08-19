@@ -5,7 +5,7 @@
 
 using namespace procademy;
 
-//#define __DEBUG
+//#define __LFSTACK_DEBUG
 
 template <typename T>
 class CLFStack
@@ -26,7 +26,7 @@ private:
 
     CCrashDump      g_Dump;
 
-#ifdef __DEBUG
+#ifdef __LFSTACK_DEBUG
     enum class e_TYPE
     {
         TYPE_PUSH_TRY = 0,
@@ -57,7 +57,7 @@ public:
         : m_Pool()
         , m_pTop{ nullptr, 0 }
         , m_ulSize(0)
-#ifdef __DEBUG
+#ifdef __LFSTACK_DEBUG
         , m_pMemoryLog(new st_DEBUG[dfMEMORY_LOG_CNT])
         , m_lDebugIndex(-1)
 #endif
@@ -69,7 +69,7 @@ public:
 
     void Push(T data)
     {
-#ifdef __DEBUG
+#ifdef __LFSTACK_DEBUG
         // 메모리 로깅 관련 인덱스, 카운트 설정
         ULONG64 iIndex;
 
@@ -92,7 +92,7 @@ public:
 
             pNewNode->_pNext = m_pTop._pNode;
 
-#ifdef __DEBUG
+#ifdef __LFSTACK_DEBUG
             // 메모리 로깅..
             stDebug->_dwThreadID = GetCurrentThreadId();
             stDebug->_eType = e_TYPE::TYPE_PUSH_TRY;
@@ -113,7 +113,7 @@ public:
 
     void Pop(volatile T* pOut)
     {
-#ifdef __DEBUG
+#ifdef __LFSTACK_DEBUG
         // 메모리 로깅 관련 인덱스, 카운트 설정
         ULONG64 iIndex;
 
@@ -136,7 +136,7 @@ public:
                 return;
             }
 
-#ifdef __DEBUG
+#ifdef __LFSTACK_DEBUG
             // 메모리 로깅..
             stDebug->_dwThreadID = GetCurrentThreadId();
             stDebug->_eType = e_TYPE::TYPE_POP_TRY;
@@ -165,7 +165,7 @@ private:
 
     ULONG64                     m_ulSize;
 
-#ifdef __DEBUG
+#ifdef __LFSTACK_DEBUG
     st_DEBUG* m_pMemoryLog;
     ULONG64                     m_lDebugIndex;
 #endif
