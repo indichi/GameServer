@@ -17,8 +17,6 @@ public:
 	bool Free(volatile T* data);
 private:
 	CChunk<T>*					m_Chunk;
-
-	alignas(64)
 	CLFMemoryPool<CChunk<T>>*	m_MainPool;
 };
 
@@ -38,25 +36,25 @@ CChunkMemoryPool<T>::~CChunkMemoryPool()
 template<typename T>
 T* CChunkMemoryPool<T>::Alloc()
 {
-	//CChunk<T>* pChunk = m_Chunk;
+	CChunk<T>* pChunk = m_Chunk;
 
-	//T* ret = &(pChunk->_tData[pChunk->_dwIndex]._tData);
-	//++pChunk->_dwIndex;
-
-	//// Index 체크해서 다 쓴 청크면 다시 alloc 받아와야함
-	//if (pChunk->_dwIndex == dfCHUNK_NODE_COUNT)
-	//	m_Chunk = m_MainPool->Alloc();
-	//
-	//return ret;
-
-	T* ret = &(m_Chunk->_tData[m_Chunk->_dwIndex]._tData);
-	++m_Chunk->_dwIndex;
+	T* ret = &(pChunk->_tData[pChunk->_dwIndex]._tData);
+	++pChunk->_dwIndex;
 
 	// Index 체크해서 다 쓴 청크면 다시 alloc 받아와야함
-	if (m_Chunk->_dwIndex == dfCHUNK_NODE_COUNT)
+	if (pChunk->_dwIndex == dfCHUNK_NODE_COUNT)
 		m_Chunk = m_MainPool->Alloc();
-
+	
 	return ret;
+
+	//T* ret = &(m_Chunk->_tData[m_Chunk->_dwIndex]._tData);
+	//++m_Chunk->_dwIndex;
+
+	//// Index 체크해서 다 쓴 청크면 다시 alloc 받아와야함
+	//if (m_Chunk->_dwIndex == dfCHUNK_NODE_COUNT)
+	//	m_Chunk = m_MainPool->Alloc();
+
+	//return ret;
 }
 
 template<typename T>

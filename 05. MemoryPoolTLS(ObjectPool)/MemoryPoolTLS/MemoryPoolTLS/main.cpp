@@ -5,7 +5,9 @@
 #include "Profiler.h"
 //#include "TLSProfiling.h"
 
-HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+HANDLE hNewDeleteEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+HANDLE hPoolEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+const int iThreadCount = 4;
 
 class CTest
 {
@@ -20,7 +22,7 @@ CMemoryPoolTLS<CTest> g_Pool;
 
 void __stdcall NewDelete()
 {
-    WaitForSingleObject(hEvent, INFINITE);
+    WaitForSingleObject(hNewDeleteEvent, INFINITE);
 
     for (int i = 0; i < 10000; ++i)
     {
@@ -37,7 +39,7 @@ void __stdcall NewDelete()
 
 void __stdcall PoolAllocFree()
 {
-    WaitForSingleObject(hEvent, INFINITE);
+    WaitForSingleObject(hPoolEvent, INFINITE);
 
     for (int i = 0; i < 10000; ++i)
     {
@@ -70,18 +72,12 @@ void SetPool()
 
 int main(void)
 {
-    const int iThreadCount = 4;
-    
-
-    if (hEvent == 0)
+    if (hNewDeleteEvent == 0 || hPoolEvent == 0)
         return -1;
 
     HANDLE hThreads[iThreadCount];
 
     InitProfiler();
-
-    ResetEvent(hEvent);
-
 
     ////////////////////////////////////////////////////////////
     //// new delete
@@ -92,15 +88,21 @@ int main(void)
     hThreads[2] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, NULL, NULL, NULL);
     hThreads[3] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)NewDelete, NULL, NULL, NULL);
 
-    SetEvent(hEvent);
+    SetEvent(hNewDeleteEvent);
 
     WaitForMultipleObjects(iThreadCount, hThreads, TRUE, INFINITE);
+    
+    for (int i = 0; i < iThreadCount; ++i)
+    {
+        if (hThreads[i] == 0)
+            continue;
 
+        CloseHandle(hThreads[i]);
+    }
+    
     ////////////////////////////////////////////////////////////
     //// Alloc Free
     ////////////////////////////////////////////////////////////
-
-    ResetEvent(hEvent);
 
     hThreads[0] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, NULL, NULL, NULL);
     hThreads[1] = (HANDLE)_beginthreadex(NULL, NULL, (_beginthreadex_proc_type)PoolAllocFree, NULL, NULL, NULL);
@@ -109,13 +111,22 @@ int main(void)
 
     SetPool();
 
-    SetEvent(hEvent);
+    SetEvent(hPoolEvent);
 
     WaitForMultipleObjects(iThreadCount, hThreads, TRUE, INFINITE);
 
-    CloseHandle(hEvent);
-
     ProfilePrint();
+
+    CloseHandle(hNewDeleteEvent);
+    CloseHandle(hPoolEvent);
+
+    for (int i = 0; i < iThreadCount; ++i)
+    {
+        if (hThreads[i] == 0)
+            continue;
+
+        CloseHandle(hThreads[i]);
+    }
 
     return 0;
 }

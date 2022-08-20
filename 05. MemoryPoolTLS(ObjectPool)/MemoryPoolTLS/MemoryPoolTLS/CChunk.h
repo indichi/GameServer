@@ -18,11 +18,10 @@ public:
     };
 
     DWORD                   _dwIndex;
-    char                    _garbage1[64];
     DWORD                   _dwFreeCount;
 
     st_DATA                 _tData[dfCHUNK_NODE_COUNT];
-
+    
 private:
 };
 

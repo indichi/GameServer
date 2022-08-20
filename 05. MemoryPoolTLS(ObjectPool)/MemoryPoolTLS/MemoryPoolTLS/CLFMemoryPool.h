@@ -68,14 +68,14 @@ namespace procademy
 
         UINT64                  m_lDebugIndex;
 #endif
-        alignas(16) st_CMP_NODE m_pTop;
+        alignas(16) st_CMP_NODE             m_pTop;
         // UINT64                  m_uiID;
 
         alignas(64) long                    m_lCapacity;
         alignas(64) long                    m_lUseCount;
 
-        bool                    m_bUsePlacement;
-        CCrashDump*             g_Dump;
+        alignas(64) bool                    m_bUsePlacement;
+        CCrashDump*                         g_Dump;
     };
 
     template <typename T>
