@@ -19,8 +19,8 @@ public:
     bool Free(volatile T* data);
 
 private:
-    DWORD                                               m_dwTLSindex;
     CLFMemoryPool<CChunk<T>>*                           m_MainPool;
+    DWORD                                               m_dwTLSindex;
 };
 
 template<typename T>
@@ -64,7 +64,8 @@ bool CMemoryPoolTLS<T>::Free(volatile T* data)
     // 데이터옆에 숨겨둔 this를 통해서 내가 속해있었던 CChunk의 FreeCount를 증가 및 확인해서 최대치면 메인 메모리풀에 free (다른 쓰레드에서 free 할 수도 있으니 interlockedincrement로)
 
     // 내가 속한 chunk 찾기
-    CChunk<T>* chunk = *(CChunk<T>**)((char*)data - sizeof(CChunk<T>*));
+    //CChunk<T>* chunk = *(CChunk<T>**)((char*)data - sizeof(CChunk<T>*));
+    CChunk<T>* chunk = *(CChunk<T>**)((char*)data - (sizeof(CChunk<T>::st_DATA) - sizeof(T)));
 
     // Free Count를 증가시키고 다 free 됐는지 확인 -> 다 됐으면 main pool에 chunk 반환
     if (InterlockedIncrement(&chunk->_dwFreeCount) == dfCHUNK_NODE_COUNT)

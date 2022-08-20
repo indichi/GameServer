@@ -196,7 +196,8 @@ namespace procademy
 #ifdef __DEBUG
         st_NODE* pPushNode = (st_NODE*)(((char*)data) - sizeof(CLFMemoryPool*) - sizeof(UINT64) - sizeof(UINT64) - sizeof(st_NODE*));
 #else
-        st_NODE* pPushNode = (st_NODE*)(((char*)data) - sizeof(UINT64) - sizeof(st_NODE*));
+        //st_NODE* pPushNode = (st_NODE*)(((char*)data) - sizeof(UINT64) - sizeof(st_NODE*));
+        st_NODE* pPushNode = (st_NODE*)((char*)data - (sizeof(st_NODE) - sizeof(T)));
 #endif
 
 #ifdef __DEBUG
