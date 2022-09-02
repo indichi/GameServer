@@ -9,11 +9,11 @@
 
 using namespace procademy;
 
-class CChatServer final : public CNetServer
+class CSingleChatServer final : public CNetServer
 {
 public:
-    CChatServer();
-    virtual ~CChatServer();
+    CSingleChatServer(st_SERVER_INFO* stStartInfo);
+    virtual ~CSingleChatServer();
 
 	bool OnConnectionRequest(unsigned long szIp, unsigned short usPort) override;
 	bool OnClientJoin(DWORD64 dwSessionID) override;
@@ -21,21 +21,15 @@ public:
 	void OnRecv(DWORD64 dwSessionID, CPacket* pPacket) override;
 	void OnError(DWORD64 dwSessionID, int iErrorCode, WCHAR* szError) override;
 	void OnTimer() override;
-	void OnMonitoring() override;
+	void OnMonitoring(st_LIB_MONITORING* pLibMonitoring) override;
 
-	bool Start(const WCHAR* szIp, unsigned short usPort, int iWorkerThreadCount, int iRunningThreadCount, bool bNagle, int iMaxUserCount, unsigned char uchPacketCode, unsigned char uchPacketKey, int iTimeout) override;
+	bool Start() override;
 
 private:
-	union SessionInfo
-	{
-		DWORD64						dwSessionID;
-		DWORD64						dwTime;
-	};
-
 	struct st_JOB
 	{
 		CNetServer::eFuncHandler	eHandle;
-		SessionInfo					uSessionInfo;
+		DWORD64						dwSessionID;
 		CPacket*					pPacket;
 	};
 
@@ -66,7 +60,18 @@ private:
 	};
 
 private:
-	static void __stdcall Contents(CChatServer* pThis);
+	void ContentsOnClientJoin(DWORD64 dwSessionID);
+	void ContentsOnClientLeave(DWORD64 dwSessionID);
+	void ContentsOnRecv(st_JOB* stJob);
+	void ContentsOnTimer();
+
+	void Packet_Login(st_PLAYER* pPlayer, CPacket* pPacket);
+	void Packet_SectorMove(st_PLAYER* pPlayer, CPacket* pPacket);
+	void Packet_Chat(st_PLAYER* pPlayer, CPacket* pPacket);
+	void Packet_Heartbeat(st_PLAYER* pPlayer, CPacket* pPacket);
+
+private:
+	static void __stdcall Contents(CSingleChatServer* pThis);
 
 	void SetSectorAround(int iSectorX, int iSectorY, st_SECTOR_AROUND* pSectorAround);
 	void GetSectorAround(int iSectorX, int iSectorY, st_SECTOR_AROUND* pSectorAround);
@@ -76,7 +81,7 @@ private:
 	CLFQueue<st_JOB*>*							m_JobQ;
 	CLFMemoryPool<st_PLAYER>*					m_PlayerPool;
 	unordered_map<DWORD64, st_PLAYER*>*			m_PlayerMap;							// 실질적으로 채팅이 가능한 플레이어 맵
-	pair<st_SECTOR_AROUND, list<st_PLAYER*>>	m_SectorList[dfSECTOR_X][dfSECTOR_Y];	// 자신 주변 9섹터 정보와 해당 섹터 플레이어를 가지고 있는 섹터 리스트
+	pair<st_SECTOR_AROUND, list<st_PLAYER*>*>	m_SectorList[dfSECTOR_X][dfSECTOR_Y];	// 자신 주변 9섹터 정보와 해당 섹터 플레이어를 가지고 있는 섹터 리스트
 
 	HANDLE										m_hContentsThread;
 	HANDLE										m_hEvent;								// 컨텐츠 쓰레드 제어용 이벤트

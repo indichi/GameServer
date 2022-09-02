@@ -14,6 +14,8 @@ public:
     virtual void Parse() = 0;
 
     bool GetData(const wchar_t* key, int* out);
+    bool GetData(const wchar_t* key, short* out);
+    bool GetData(const wchar_t* key, unsigned short* out);
     bool GetData(const wchar_t* key, float* out);
     bool GetData(const wchar_t* key, wchar_t* out);
     bool GetData(const wchar_t* key, bool* out);

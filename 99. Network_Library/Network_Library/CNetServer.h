@@ -28,7 +28,7 @@ private:
 
     struct st_SESSION
     {
-        UINT64                  dwSessionID;
+        DWORD64                 dwSessionID     = -1;
 
         SOCKET                  sock;
         OVERLAPPED              recv_overlapped;
@@ -41,36 +41,60 @@ private:
         WSABUF                  recv_wsabuf[2];
         int                     iSendPacketCount;
 
-        int                     bCanSend;
+        /*alignas(64) DWORD       bReleaseFlag    = FALSE;
+        DWORD                   IO_Count        = 0;*/
 
-        int                     bReleaseFlag;
-        int                     IO_Count;
+        alignas(16) DWORD64     bReleaseFlag    = FALSE;
+        DWORD64                 IO_Count        = 0;
+
+        alignas(64) DWORD       bCanSend        = FALSE;
     };
 
-    struct st_MONITORING
+protected:
+
+    struct st_LIB_MONITORING
     {
-        int iSessionCount;
-        int iPacketPoolAllocSize;
+        int iSessionCount = 0;
+        int iAcceptTotal = 0;
+        int iAcceptTPS = 0;
+        int iRecvTPS = 0;
+        int iSendTPS = 0;
+    };
 
-        int iAcceptTotal;
-        int iAcceptTPS;
-        int iUpdateTPS;
-
-        int iRecvTPS;
-        int iSendTPS;
+    enum class eFuncHandler
+    {
+        OnConnectionRequest = 0,
+        OnClientJoin,
+        OnClientLeave,
+        OnRecv,
+        OnError,
+        OnTimer
     };
 
 public:
-    CNetServer() = delete;
+    struct st_SERVER_INFO
+    {
+        WCHAR               szIp[20];
+        unsigned short      usPort;
+        int                 iWorkerThreadCount;
+        int                 iRunningThreadCount;
+        bool                bNagle;
+        int                 iMaxSessionCount;
+        unsigned char       uchPacketCode;
+        unsigned char       uchPacketKey;
+        int                 iTimeout;
+        int                 iContentsThreadCount;
+    };
+
+public:
+    CNetServer(st_SERVER_INFO* stServerInfo);
     CNetServer(const CNetServer& other) = delete;
-    CNetServer(int iSessionMaxCount);
     
     virtual ~CNetServer();
 
-    virtual bool Start(const WCHAR* szIp, unsigned short usPort, int iWorkerThreadCount, int iRunningThreadCount, bool bNagle, int iMaxUserCount, unsigned char uchPacketCode, unsigned char uchPacketKey, int iTimeout);
-    void Stop();
+    virtual bool Start();
 
-    int GetSessionCount() const;
+    void Stop();
 
     bool Disconnect(DWORD64 dwSessionID);
     bool SendPacket_Unicast(DWORD64 dwSessionID, CPacket* pPacket);
@@ -83,17 +107,8 @@ public:
     virtual void OnRecv(DWORD64 dwSessionID, CPacket* pPacket) = 0;                         // 패킷 수신 완료 후
     virtual void OnError(DWORD64 dwSessionID, int iErrorCode, WCHAR* szError) = 0;          // 에러 핸들링
     virtual void OnTimer() = 0;                                                             // 타임아웃 용
-    virtual void OnMonitoring() = 0;                                                        // 모니터링 용
-protected:
-    enum class eFuncHandler
-    {
-        OnConnectionRequest     = 0,
-        OnClientJoin,
-        OnClientLeave,
-        OnRecv,
-        OnError,
-        OnTimer
-    };
+    virtual void OnMonitoring(st_LIB_MONITORING* pLibMonitoring) = 0;                       // 모니터링 용
+
 private:
     static void __stdcall Accept(CNetServer* pThis);
     static void __stdcall Work(CNetServer* pThis);
@@ -105,13 +120,13 @@ private:
     void RecvPost(st_SESSION* pSession);
     void SendPost(st_SESSION* pSession);
 
-    st_SESSION* FindSession(UINT64 uiSessionID);
-    UINT GetIndex(UINT64 uiSessionID);
-    UINT64 CombineIndexID(UINT uiIndex, UINT uiID);
+private:
+    DWORD64 CombineIndexID(DWORD64 dwIndex, DWORD64 dwID);
+    st_SESSION* GetCheckedSession(DWORD64 dwSessionID);
 
 private:
     st_SESSION*                         m_ArrSession;
-    CLFStack<UINT>*                     m_IndexStack;
+    CLFStack<DWORD64>*                  m_IndexStack;
 
     SOCKET                              m_ListenSocket;
 
@@ -120,12 +135,7 @@ private:
     HANDLE                              m_hMonitoringThread;
     HANDLE                              m_hTimeThread;
     HANDLE*                             m_hWorkerThreads;
-    
-    int                                 m_iWorkerThreadCount;
-    int                                 m_iSessionMaxCount;
-    int                                 m_iTimeout;
 
-protected:
-    alignas(64)
-    st_MONITORING                       m_stMonitoring;
+    alignas(64) st_LIB_MONITORING       m_stMonitoring;
+    alignas(64) st_SERVER_INFO          m_stServerInfo;
 };

@@ -60,6 +60,54 @@ bool CBaseParser::GetData(const wchar_t* key, int* out)
     return false;
 }
 
+bool CBaseParser::GetData(const wchar_t* key, short* out)
+{
+    if (mData.empty())
+    {
+        return false;
+    }
+
+    if (out == nullptr)
+    {
+        return false;
+    }
+
+    for (auto i = mData.begin(); i != mData.end(); ++i)
+    {
+        if (wcscmp(key, i->key) == 0)
+        {
+            *out = (short)_wtoi(i->value);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool CBaseParser::GetData(const wchar_t* key, unsigned short* out)
+{
+    if (mData.empty())
+    {
+        return false;
+    }
+
+    if (out == nullptr)
+    {
+        return false;
+    }
+
+    for (auto i = mData.begin(); i != mData.end(); ++i)
+    {
+        if (wcscmp(key, i->key) == 0)
+        {
+            *out = (unsigned short)_wtoi(i->value);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool CBaseParser::GetData(const wchar_t* key, float* out)
 {
     if (mData.empty())
