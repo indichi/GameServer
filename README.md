@@ -1,2 +1,1 @@
-# GameServer
-Study Game Server repository
+# Jin Woo Chung / Game Server Portfolio.
